@@ -56,7 +56,10 @@ The **brain is a separate repo**: [`thelab`](https://github.com/derekclair/thela
 holds the LangGraph agent and its long-term memory. This split keeps concerns
 clean — **this repo is the ears, mouth, hands, and telemetry; `thelab` is the
 brain and memory.** The brain is optional: `make smoke` runs the voice I/O path
-with no brain and no API keys at all.
+with no brain and no API keys at all. How that brain sits in a spec-first,
+role-split workstation fleet (and why the Spark only runs one serious local
+LLM at a time) is documented in
+[`thelab` spec 008](https://github.com/derekclair/thelab/blob/main/specs/008-workstation-agent-fleet/spec.md).
 
 ## The interesting engineering
 
