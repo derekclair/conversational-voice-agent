@@ -22,6 +22,7 @@ and what "voice moving through the system" looks like in the logs
 
 import math
 import os
+import signal
 import struct
 import subprocess
 import sys
@@ -542,6 +543,15 @@ def main():
 
     session_event = threading.Event()
     stop_event = threading.Event()
+    shutdown = threading.Event()
+
+    def _request_shutdown(signum, _frame):
+        # Event.wait() with no timeout blocks in C and swallows SIGINT/SIGTERM.
+        shutdown.set()
+        stop_event.set()
+
+    signal.signal(signal.SIGINT, _request_shutdown)
+    signal.signal(signal.SIGTERM, _request_shutdown)
 
     threading.Thread(
         target=_pipe_reader, args=(session_event, stop_event), daemon=True
@@ -552,15 +562,23 @@ def main():
     print("  Ctrl+C to shut down.\n")
 
     try:
-        while True:
-            session_event.wait()
+        while not shutdown.is_set():
+            # Timed wait so the interpreter can run the signal handler.
+            session_event.wait(timeout=0.5)
+            if shutdown.is_set():
+                break
             if not session_event.is_set():
                 continue
+            if shutdown.is_set():
+                break
             stop_event.clear()
             _session_loop(stop_event)
             session_event.clear()
+            if shutdown.is_set():
+                break
             # Restore LED to solid = ready for next session
             set_teams_light(True)
+        print("\nShutting down.")
     except KeyboardInterrupt:
         print("\nShutting down.")
     finally:

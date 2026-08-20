@@ -47,4 +47,8 @@ echo ""
 # The user's environment may only have "python3" globally, and even after
 # `source activate` some setups don't expose a "python" command.
 # The Makefile and other launchers already use the full $(PYTHON) path for this reason.
-PYTHONPATH="$SCRIPT_DIR" "$VENV/bin/python" -m local_tts.voice_loop "$@"
+# exec so this process *is* the voice loop: Ctrl+C / SIGTERM reach Python
+# instead of sitting in an extra bash that wait()s on it (and make waiting
+# on that bash).
+export PYTHONPATH="$SCRIPT_DIR"
+exec "$VENV/bin/python" -m local_tts.voice_loop "$@"
