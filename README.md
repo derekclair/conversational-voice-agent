@@ -180,17 +180,24 @@ a small FastAPI ingest service) with its own `observability/.env.example`.
 
 ## Benchmark
 
-Per-turn latency, captured with `bench/latency_report.py` from a real session
-(see below). Values are placeholders until a capture is run on the hardware.
+One real session on this DGX Spark desk, 2026-08-19: three completed turns,
+Lenovo Go speakerphone, Parakeet TDT 0.6B on CPU, Piper `en_US-amy-medium`,
+thelab agent on hosted Grok. Generated with `bench/latency_report.py` from
+local `turn_complete` telemetry (durations only; transcripts are not committed).
+
+n=3 — these are descriptive numbers from one sitting, not a load test. With
+three samples, p95 sits near the max. `tts_ms` is full synthesis **plus**
+playback wall time; `tts_ttfa_ms` is time to first audio after sentence
+chunking. `eou_ms` is the configured ~500 ms end-of-utterance silence wait.
 
 | metric | count | p50 | p95 | min | max |
 |--------|-------|-----|-----|-----|-----|
-| asr_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| agent_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| tts_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| total_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| eou_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| tts_ttfa_ms | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| asr_ms | 3 | 377 | 1308 | 355 | 1412 |
+| agent_ms | 3 | 4069 | 5448 | 3477 | 5601 |
+| tts_ms | 3 | 10967 | 13906 | 2001 | 14232 |
+| total_ms | 3 | 15392 | 17818 | 9015 | 18087 |
+| eou_ms | 3 | 499 | 500 | 499 | 500 |
+| tts_ttfa_ms | 3 | 122 | 144 | 85 | 146 |
 
 Generate the table yourself from telemetry:
 
@@ -242,8 +249,9 @@ playback gets stuck on "device busy."
   streaming partials in this build), and you interrupt by pressing the button
   rather than by speaking over the agent.
 - **CPU STT.** Parakeet runs on the CPU path here; GPU inference is not wired up.
-- **Benchmarks pending.** The latency table above is intentionally empty until a
-  real capture is run — no invented numbers.
+- **Small capture.** The latency table is one three-turn session, not a
+  benchmark suite. Re-run `bench/latency_report.py` on your own telemetry
+  rather than treating those percentiles as targets.
 
 ## License
 
