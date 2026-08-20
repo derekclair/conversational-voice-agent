@@ -1,0 +1,16 @@
+[Unit]
+Description=Local TTS Voice Agent (Parakeet STT + thelab agent + Piper TTS)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+Environment=PYTHONPATH=__PROJECT_DIR__
+Environment=LLM_PROVIDER=xai
+Environment=LLM_MODEL=grok-3-mini
+ExecStart=__PROJECT_DIR__/.venv/bin/python -m local_tts.voice_loop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,76 @@
+## Voice Agent Observability Stack
+## Run on a separate LAN host to keep DGX Spark resources free.
+##
+## Services:
+##   - postgres:  Structured data (sessions, turns, events, tool calls)
+##   - loki:      Log aggregation for full event stream search
+##   - grafana:   Dashboards (pre-provisioned with Postgres + Loki data sources)
+##   - ingest:    FastAPI service — single /events endpoint, writes to both backends
+##
+## Usage:
+##   docker compose up -d
+##
+## Then on the DGX Spark, set:
+##   export TELEMETRY_URL=http://<this-host>:8100/events
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: voice_agent
+      POSTGRES_USER: voice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voice -d voice_agent"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  loki:
+    image: grafana/loki:3.0.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - lokidata:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  ingest:
+    build: ./ingest
+    ports:
+      - "8100:8100"
+    environment:
+      DATABASE_URL: postgresql://voice:${POSTGRES_PASSWORD:-changeme}@postgres:5432/voice_agent
+      LOKI_URL: http://loki:3100
+    depends_on:
+      postgres:
+        condition: service_healthy
+      loki:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      # Passed through so the provisioned Postgres datasource can read it.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - postgres
+      - loki
+
+volumes:
+  pgdata:
+  lokidata:
+  grafanadata:

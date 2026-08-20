@@ -1,0 +1,101 @@
+{
+  "dashboard": {
+    "title": "Voice Agent Performance",
+    "uid": "voice-agent-perf",
+    "tags": ["voice-agent"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": { "from": "now-1h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Turn Latency Breakdown (ms)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "datasource": { "type": "postgres", "uid": "Postgres" },
+        "targets": [
+          {
+            "rawSql": "SELECT created_at AS time, asr_ms, agent_ms, tts_ms, total_ms FROM turns ORDER BY created_at",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms" }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Sessions Today",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "datasource": { "type": "postgres", "uid": "Postgres" },
+        "targets": [
+          {
+            "rawSql": "SELECT COUNT(*) AS sessions FROM sessions WHERE started_at >= CURRENT_DATE",
+            "format": "table",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Total Turns Today",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "datasource": { "type": "postgres", "uid": "Postgres" },
+        "targets": [
+          {
+            "rawSql": "SELECT COUNT(*) AS turns FROM turns WHERE created_at >= CURRENT_DATE",
+            "format": "table",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Avg Latency by Stage (ms)",
+        "type": "bargauge",
+        "gridPos": { "h": 4, "w": 12, "x": 12, "y": 4 },
+        "datasource": { "type": "postgres", "uid": "Postgres" },
+        "targets": [
+          {
+            "rawSql": "SELECT AVG(asr_ms) AS \"ASR\", AVG(agent_ms) AS \"Agent\", AVG(tts_ms) AS \"TTS\", AVG(total_ms) AS \"Total\" FROM turns WHERE created_at >= CURRENT_DATE",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms" }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Recent Conversations",
+        "type": "table",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+        "datasource": { "type": "postgres", "uid": "Postgres" },
+        "targets": [
+          {
+            "rawSql": "SELECT t.created_at AS time, s.user_id, t.turn_number, t.user_text AS \"User\", LEFT(t.agent_reply, 200) AS \"Agent\", t.total_ms, t.tool_calls FROM turns t JOIN sessions s ON t.session_id = s.id ORDER BY t.created_at DESC LIMIT 50",
+            "format": "table",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Event Stream (Loki)",
+        "type": "logs",
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+        "datasource": { "type": "loki", "uid": "Loki" },
+        "targets": [
+          {
+            "expr": "{job=\"voice_agent\"}",
+            "refId": "A"
+          }
+        ]
+      }
+    ]
+  }
+}
