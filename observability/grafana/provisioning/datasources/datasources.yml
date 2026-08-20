@@ -1,0 +1,20 @@
+apiVersion: 1
+datasources:
+  - name: Postgres
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: voice_agent
+    user: voice
+    secureJsonData:
+      # Grafana interpolates $ENV from the container environment (see docker-compose.yml).
+      password: ${POSTGRES_PASSWORD}
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+    isDefault: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100

@@ -1,0 +1,16 @@
+[Unit]
+Description=Local TTS Button Listener (Teams button + volume control)
+After=local-tts.service
+Requires=local-tts.service
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+Environment=PYTHONPATH=__PROJECT_DIR__
+ExecStart=__PROJECT_DIR__/.venv/bin/python -m local_tts.button_listener
+# Process stays running while device is unplugged (hotplug wait). Restart=always is a safety net.
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

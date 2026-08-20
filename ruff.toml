@@ -1,0 +1,34 @@
+# Ruff configuration for conversational-voice-agent.
+#
+# An explicit config is committed so `ruff check .` behaves the same locally and
+# in CI regardless of which ruff version is installed (ruff's built-in default
+# rule set varies across releases).
+#
+# Rule selection is the classic, high-signal default: Pyflakes (F) plus the
+# core pycodestyle error groups (E4/E7/E9). The intentionally-broad
+# "fail-safe" patterns in this spike — blind `except Exception` and
+# `try/except/pass` in the telemetry, audio, LED, and hotplug paths — are by
+# design (a metrics or audio hiccup must never crash the voice loop), so those
+# opt-in lint families are simply not selected here.
+#
+# The per-file-ignores below tolerate a few trivial findings in the
+# pre-existing spike source. This docs/bench/CI pass deliberately does not
+# modify that source, so they are whitelisted here (with reasons) rather than
+# edited, keeping `ruff check .` green without churning the existing code.
+
+target-version = "py311"
+line-length = 100
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Package surface: helpers are imported to be re-exported from the package.
+"local_tts/__init__.py" = ["F401"]
+# Pre-existing spike modules (not modified in this pass): one unused typing
+# import and one placeholder-free f-string.
+"local_tts/led_control.py" = ["F401", "F541"]
+# Standalone Docker ingest service (separate concern; not modified here).
+"observability/ingest/main.py" = ["F401"]
+# Test imports a symbol to document the extractor's return type.
+"tests/test_agent_io.py" = ["F401"]
